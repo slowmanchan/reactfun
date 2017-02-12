@@ -104,34 +104,13 @@ class DetailsBox extends Component {
     this.state = {
       games: []
     }
-    this.fetchData = this.fetchData.bind(this);
   }
-
-  fetchData(month, day, year) {
-     axios.get(`http://gd2.mlb.com/components/game/mlb/year_${year}/month_${month}/day_${day}/gid_2016_10_11_wasmlb_lanmlb_1/boxscore.json`)
-       .then((res) => {
-         console.log(res.data.data.boxscore)
-         this.setState({
-           games: res.data.data.boxscore
-         })
-       })
-       .catch((error) => {
-         console.log(error.response)
-       });
-  }
-
-  componentDidMount() {
-    this.fetchData(10, 11, 2016);
-  }
-
+  
   render() {
+    console.log(this.props.details)
     return (
       <div>
         <h1>Details</h1>
-
-        <ScoreDetail data={this.state.games.linescore}/>
-        <TeamSelector />
-        <BatterDetail data={this.state.games.batting}/>
       </div>
     )
   }
@@ -150,19 +129,36 @@ class TeamSelector extends Component {
 class DetailsButton extends Component {
   constructor(props) {
     super(props);
-
     this.state = {
-      showComponent: false
+      boxscore: []
     }
+
     this.clickHandler = this.clickHandler.bind(this);
+    this.fetchBatterData = this.fetchBatterData.bind(this);
   }
 
-  clickHandler() {
-    this.setState({
-      showComponent: true
-    })
+  fetchBatterData(month, year, day, home, away) {
+
+    axios.get(`http://gd2.mlb.com/components/game/mlb/year_${year}/month_${month}/day_${day}/gid_${year}_${month}_${day}_${away}mlb_${home}mlb_1/boxscore.json`)
+      .then((res) => {
+        this.props.handleDetailsUpdate(res.data.data.boxscore)
+        /*
+        console.log(res.data.data.boxscore)
+        this.setState({
+          boxscore: res.data.data.boxscore
+        })
+        */
+      })
+      .catch((error) => {
+        console.log(error.response)
+      })
   }
 
+  clickHandler(e) {
+    //DetailsBox
+    e.preventDefault();
+    this.fetchBatterData(this.props.date[1], this.props.date[2], this.props.date[0], this.props.home, this.props.away)
+  }
 
   render() {
     return (
@@ -206,7 +202,7 @@ class Scores extends Component {
         <h4>{status.status}</h4>
           <p className={homeWinning ? 'bold' : null}>{home_code} | {linescore.r.home}</p>
           <p className={awayWinning ? 'bold' : null}>{away_code} | {linescore.r.away}</p>
-        <DetailsButton />
+        <DetailsButton handleDetailsUpdate={this.props.handleDetailsUpdate} home={home_code} away={away_code} date={this.props.date}/>
       </div>
     );
   }
@@ -218,22 +214,26 @@ class ScoreBoard extends Component {
 
     this.state = {
       games: [],
-      date: '',
+      date: [],
       noGameData: true,
       details: null,
 
     }
     this.fetchData = this.fetchData.bind(this);
     this.handleChange = this.handleChange.bind(this);
+    this.handleDetailsUpdate = this.handleDetailsUpdate.bind(this);
+  }
+
+  handleDetailsUpdate(details) {
+    this.setState ({
+      details: details
+    })
   }
 
   // fetch data from MLB JSON API
   fetchData(month, day, year) {
     axios.get(`http://gd2.mlb.com/components/game/mlb/year_${year}/month_${month}/day_${day}/master_scoreboard.json`)
       .then((res) => {
-
-        console.log(res.data.data.games.game)
-
         // 1 or more games, obj or array.
         if (res.data.data.games.game) {
 
@@ -315,6 +315,9 @@ class ScoreBoard extends Component {
     const day = dateString[2];
 
     this.fetchData(month, day, year)
+    this.setState({
+      date: [month, day, year]
+    })
   }
 
 
@@ -334,7 +337,7 @@ class ScoreBoard extends Component {
     var scores = [];
 
     this.state.games.forEach((game, index) => {
-      scores.push(<Scores data={game} key={index} />);
+      scores.push(<Scores handleDetailsUpdate={this.handleDetailsUpdate} data={game} key={index} date={this.state.date} />);
     });
 
     return (
@@ -342,10 +345,10 @@ class ScoreBoard extends Component {
       <form style={{textAlign: 'center'}} onSubmit={this.handleSubmit}>
         <input type="date" placeholder="Enter a date..." onChange={this.handleChange} />
       </form>
-      <DateSelector date={this.state.games.modified_date} />
+      <DateSelector />
         {checkGameData()}
         {scores}
-        <DetailsBox />
+        <DetailsBox details={this.state.details}/>
       </div>
     );
   }
