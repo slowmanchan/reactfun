@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom';
 import axios from 'axios';
 require('./main.css');
 
-const MLB = require('./mlb.json');
-
 class StatRow extends Component {
   render() {
     console.log("statrow" + this.props.data)
@@ -78,7 +76,8 @@ class BatterRow extends Component {
 class BatterTable extends Component {
   render() {
     var rows = [];
-    this.props.details.batting[0].batter.forEach((batter) => {
+    console.log("===" + this.props.teamIndex)
+    this.props.details.batting[(this.props.teamIndex)].batter.forEach((batter) => {
       rows.push(<BatterRow batter={batter}/>)
     })
     // console.log("==" + this.props.details.batting[0].batter)
@@ -126,27 +125,45 @@ class DetailsBox extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      games: []
+      games: [],
+      teamIndex: 0
     }
+    this.handleTeamToggle = this.handleTeamToggle.bind(this)
+  }
+
+  handleTeamToggle(team) {
+    this.setState({
+      teamIndex: team
+    })
   }
 
   render() {
-    console.log(this.props.details)
+    console.log("++" + this.state.teamIndex)
     return (
       <div>
         <h1>Details</h1>
         <ScoreTable data={this.props.details} />
-        <BatterTable details={this.props.details} />
+        <TeamSelector handleTeamToggle={this.handleTeamToggle}/>
+        <BatterTable teamIndex={this.state.teamIndex} details={this.props.details} />
       </div>
     )
   }
 }
 
 class TeamSelector extends Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+
+  handleClick() {
+    this.props.handleTeamToggle(0)
+  }
+
   render() {
     return (
       <div>
-        <button>WAS</button> | <button>LA</button>
+        <button onClick={this.handleClick}>WAS</button> | <button onClick={this.handleClick}>LA</button>
       </div>
     )
   }
@@ -219,7 +236,7 @@ class DateSelector extends Component {
 class Scores extends Component {
 
   render() {
-    let {home_code, linescore, away_code, status} = this.props.data;
+    let {away_name_abbrev, home_name_abbrev, home_code, linescore, away_code, status} = this.props.data;
 
 
     let homeWinning = false;
@@ -234,9 +251,9 @@ class Scores extends Component {
     return (
       <div className="scores" style={{display: 'inline-block', margin: '20px'}}>
         <h4>{status.status}</h4>
-          <p className={homeWinning ? 'bold' : null}>{home_code} | {linescore.r.home}</p>
-          <p className={awayWinning ? 'bold' : null}>{away_code} | {linescore.r.away}</p>
-        <DetailsButton handleDetailsUpdate={this.props.handleDetailsUpdate} home={home_code} away={away_code} date={this.props.date}/>
+          <p className={homeWinning ? 'bold' : null}>{home_name_abbrev} | {linescore.r.home}</p>
+          <p className={awayWinning ? 'bold' : null}>{away_name_abbrev} | {linescore.r.away}</p>
+        {status.status == "Final" ? <DetailsButton handleDetailsUpdate={this.props.handleDetailsUpdate} home={home_code} away={away_code} date={this.props.date}/> : <div>&nbsp;</div>}
       </div>
     );
   }
@@ -343,6 +360,7 @@ class ScoreBoard extends Component {
       date: e.target.value
     });
     */
+    this.handleDetailsUpdate(null);
     const dateString = e.target.value.split('-');
     const year = dateString[0];
     const month = dateString[1];

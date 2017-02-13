@@ -2,14 +2,6 @@
   font-weight: bold;
 }
 
-.tbl {
-  display: table;
-}
-
-.tbl-row {
-  display: table-row;
-}
-
-.tbl-col {
-  display: table-column;
+* {
+  font-family: "Arial";
 }
