@@ -3,34 +3,48 @@ import ReactDOM from 'react-dom';
 import axios from 'axios';
 require('./main.css');
 
-class StatRow extends Component {
+class ScoreHeadingsRow extends Component {
   render() {
-    console.log("statrow" + this.props.data)
-    var rows = []
+    var cols = []
+    let {inning_line_score} = this.props.linescore;
 
-    if (this.props.data.linescore) {
-    this.props.data.linescore.inning_line_score.forEach((row) => {
-      rows.push(<td>{row.inning}</td>)
+    inning_line_score.forEach((col) => {
+      cols.push(<td>{col.inning}</td>)
     })
-  }
+
      return (
-      <tr>
-        <td></td>{rows}<td>R</td><td>H</td><td>E</td>
-      </tr>
+        <tr>
+          <td></td>
+          {cols}
+          <td>R</td>
+          <td>H</td>
+          <td>E</td>
+        </tr>
     )
   }
 }
 
 class HomeRow extends Component {
   render() {
-    var rows = []
+    var cols = []
+    let {
+      home_team_runs,
+      home_team_hits,
+      home_team_errors,
+      inning_line_score
+    } = this.props.linescore;
 
-    this.props.data.linescore.inning_line_score.forEach((row) => {
-      rows.push(<td>{row.home}</td>)
+    inning_line_score.forEach((inning) => {
+      cols.push(<td>{inning.home}</td>)
     })
+
     return (
       <tr>
-        <td>{this.props.data.home_sname}</td>{rows}<td>{this.props.data.linescore.home_team_runs}</td><td>{this.props.data.linescore.home_team_hits}</td><td>{this.props.data.linescore.home_team_errors}</td>
+        <td>{this.props.home_sname}</td>
+        {cols}
+        <td>{home_team_runs}</td>
+        <td>{home_team_hits}</td>
+        <td>{home_team_errors}</td>
       </tr>
     )
   }
@@ -39,13 +53,24 @@ class HomeRow extends Component {
 class AwayRow extends Component {
   render() {
     var rows = []
+    let {
+      inning_line_score,
+      away_team_runs,
+      away_team_hits,
+      away_team_errors
+    } = this.props.linescore;
 
-    this.props.data.linescore.inning_line_score.forEach((row) => {
-      rows.push(<td>{row.away}</td>)
+    inning_line_score.forEach((inning) => {
+      rows.push(<td>{inning.away}</td>)
     })
+
     return (
       <tr>
-        <td>{this.props.data.away_sname}</td>{rows}<td>{this.props.data.linescore.away_team_runs}</td><td>{this.props.data.linescore.away_team_hits}</td><td>{this.props.data.linescore.away_team_errors}</td>
+        <td>{this.props.away_sname}</td>
+        {rows}
+        <td>{away_team_runs}</td>
+        <td>{away_team_hits}</td>
+        <td>{away_team_errors}</td>
       </tr>
     )
   }
@@ -76,23 +101,25 @@ class BatterRow extends Component {
 class BatterTable extends Component {
   render() {
     var rows = [];
-    console.log("===" + this.props.teamIndex)
+
     this.props.details.batting[(this.props.teamIndex)].batter.forEach((batter) => {
       rows.push(<BatterRow batter={batter}/>)
     })
-    // console.log("==" + this.props.details.batting[0].batter)
+
     return (
       <table>
         <thead>
-          <th>Name</th>
-          <th>AB</th>
-          <th>R</th>
-          <th>H</th>
-          <th>RBI</th>
-          <th>BB</th>
-          <th>HR</th>
-          <th>SO</th>
-          <th>AVG</th>
+          <tr>
+            <th>Name</th>
+            <th>AB</th>
+            <th>R</th>
+            <th>H</th>
+            <th>RBI</th>
+            <th>BB</th>
+            <th>HR</th>
+            <th>SO</th>
+            <th>AVG</th>
+          </tr>
         </thead>
         <tbody>
           {rows}
@@ -104,19 +131,18 @@ class BatterTable extends Component {
 
 class ScoreTable extends Component {
   render() {
-    console.log("scoredetail" + this.props.data)
-
     return (
-      <div>
-        <h1>ScoreDetails</h1>
-        <table>
-          <tbody>
-            <StatRow data={this.props.data} />
-            <HomeRow data={this.props.data} />
-            <AwayRow data={this.props.data} />
-          </tbody>
-        </table>
-      </div>
+      <table>
+        <thead>
+          <ScoreHeadingsRow linescore={this.props.data.linescore}/>
+        </thead>
+        <tbody>
+          <HomeRow linescore={this.props.data.linescore}
+                   home_sname={this.props.data.home_sname}/>
+          <AwayRow linescore={this.props.data.linescore}
+                   away_sname={this.props.data.away_sname}/>
+        </tbody>
+      </table>
     )
   }
 }
@@ -142,7 +168,7 @@ class DetailsBox extends Component {
     return (
       <div>
         <h1>Details</h1>
-        <ScoreTable data={this.props.details} />
+        <ScoreTable data={this.props.details} linescore={this.props.linescore} />
         <TeamSelector handleTeamToggle={this.handleTeamToggle}/>
         <BatterTable teamIndex={this.state.teamIndex} details={this.props.details} />
       </div>
@@ -157,7 +183,7 @@ class TeamSelector extends Component {
   }
 
   handleClick() {
-    this.props.handleTeamToggle(0)
+    this.props.handleTeamToggle(1)
   }
 
   render() {
@@ -180,17 +206,20 @@ class DetailsButton extends Component {
     this.fetchBatterData = this.fetchBatterData.bind(this);
   }
 
-  fetchBatterData(month, year, day, home, away) {
+  fetchBatterData() {
+    let gameDayString = this.props.gameday.split('_');
+    let year = gameDayString[0];
+    let month = gameDayString[1];
+    let day = gameDayString[2];
+    let homeCode = gameDayString[3];
+    let awayCode = gameDayString[4];
 
-    axios.get(`http://gd2.mlb.com/components/game/mlb/year_${year}/month_${month}/day_${day}/gid_${year}_${month}_${day}_${away}mlb_${home}mlb_1/boxscore.json`)
+    gameDayString = "year_" + year + "/month_" + month + "/day_" + day + "/gid_" + this.props.gameday;
+
+    console.log(gameDayString);
+    axios.get(`http://gd2.mlb.com/components/game/mlb/${gameDayString}/boxscore.json`)
       .then((res) => {
         this.props.handleDetailsUpdate(res.data.data.boxscore)
-        /*
-        console.log(res.data.data.boxscore)
-        this.setState({
-          boxscore: res.data.data.boxscore
-        })
-        */
       })
       .catch((error) => {
         console.log(error.response)
@@ -203,40 +232,33 @@ class DetailsButton extends Component {
 
     // Reset existing.
     this.props.handleDetailsUpdate(null)
-
-    const month = this.props.date[0];
-    const day = this.props.date[1];
-    const year = this.props.date[2];
-
-    this.fetchBatterData(month, year, day, this.props.home, this.props.away)
+    this.fetchBatterData()
   }
 
   render() {
+    console.log("---" + this.props.linescore)
     return (
       <div>
       <button onClick={this.clickHandler}>details</button>
-      {this.state.showComponent ? <DetailsBox home={this.props.home} away={this.props.away}/> : null}
+      {this.state.showComponent ? <DetailsBox linescore={this.props.linescore} home={this.props.home} away={this.props.away}/> : null}
       </div>
     )
-  }
-}
-
-class DateSelector extends Component {
-  render() {
-    return (
-      <div style={{textAlign: 'center'}}>
-        <h1>{this.props.date}</h1>
-        <button>prev</button>
-        <button>next</button>
-      </div>
-   )
   }
 }
 
 class Scores extends Component {
 
   render() {
-    let {away_name_abbrev, home_name_abbrev, home_code, linescore, away_code, status} = this.props.data;
+    let {
+      away_name_abbrev,
+      home_name_abbrev,
+      status,
+      linescore,
+      home_code,
+      away_code,
+      home_sport_code,
+      away_sport_code
+    } = this.props.data;
 
 
     let homeWinning = false;
@@ -253,7 +275,7 @@ class Scores extends Component {
         <h4>{status.status}</h4>
           <p className={homeWinning ? 'bold' : null}>{home_name_abbrev} | {linescore.r.home}</p>
           <p className={awayWinning ? 'bold' : null}>{away_name_abbrev} | {linescore.r.away}</p>
-        {status.status == "Final" ? <DetailsButton handleDetailsUpdate={this.props.handleDetailsUpdate} home={home_code} away={away_code} date={this.props.date}/> : <div>&nbsp;</div>}
+        {status.status == 'Final' || status.status == "Completed Early" ? <DetailsButton linescore={this.props.data.linescore} gameday={this.props.gameday} handleDetailsUpdate={this.props.handleDetailsUpdate} home_sport_code={home_sport_code} home={home_code} away={away_code} away_sport_code={away_sport_code} date={this.props.date}/> : <div>&nbsp;</div>}
       </div>
     );
   }
@@ -347,19 +369,8 @@ class ScoreBoard extends Component {
         })
       });
   }
-  /*
-  componentDidMount() {
-    // add function to get last game played
 
-    this.fetchData(10, 11, 2016);
-  }
-  */
   handleChange(e) {
-    /*
-    this.setState({
-      date: e.target.value
-    });
-    */
     this.handleDetailsUpdate(null);
     const dateString = e.target.value.split('-');
     const year = dateString[0];
@@ -372,10 +383,7 @@ class ScoreBoard extends Component {
     })
   }
 
-
-
   render() {
-
     const checkGameData = () => {
       if (this.state.noGameData) {
         return (
@@ -389,15 +397,16 @@ class ScoreBoard extends Component {
     var scores = [];
 
     this.state.games.forEach((game, index) => {
-      scores.push(<Scores handleDetailsUpdate={this.handleDetailsUpdate} data={game} key={index} date={this.state.date} />);
+      scores.push(
+        <Scores handleDetailsUpdate={this.handleDetailsUpdate}
+                gameday={game.gameday}
+                data={game} key={index}
+                date={this.state.date} />);
     });
 
     return (
       <div>
-      <form style={{textAlign: 'center'}} onSubmit={this.handleSubmit}>
-        <input type="date" placeholder="Enter a date..." onChange={this.handleChange} />
-      </form>
-      <DateSelector />
+        <DateSelector handleChange={this.handleChange} />
         {checkGameData()}
         {scores}
         {this.state.details ? <DetailsBox details={this.state.details}/> : null}
@@ -406,7 +415,15 @@ class ScoreBoard extends Component {
   }
 }
 
-
+class DateSelector extends Component {
+  render() {
+    return (
+      <form>
+        <input type="date" onChange={this.props.handleChange} />
+      </form>
+    )
+  }
+}
 
 ReactDOM.render(
   <ScoreBoard />,
