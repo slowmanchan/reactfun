@@ -10,12 +10,14 @@ class StatRow extends Component {
     console.log("statrow" + this.props.data)
     var rows = []
 
-    this.props.data.inning_line_score.forEach((row) => {
+    if (this.props.data.linescore) {
+    this.props.data.linescore.inning_line_score.forEach((row) => {
       rows.push(<td>{row.inning}</td>)
     })
+  }
      return (
       <tr>
-        {rows}<td>R</td><td>H</td><td>E</td>
+        <td></td>{rows}<td>R</td><td>H</td><td>E</td>
       </tr>
     )
   }
@@ -25,12 +27,12 @@ class HomeRow extends Component {
   render() {
     var rows = []
 
-    this.props.data.inning_line_score.forEach((row) => {
+    this.props.data.linescore.inning_line_score.forEach((row) => {
       rows.push(<td>{row.home}</td>)
     })
     return (
       <tr>
-        {rows}<td>{this.props.data.home_team_runs}</td><td>{this.props.data.home_team_hits}</td><td>{this.props.data.home_team_errors}</td>
+        <td>{this.props.data.home_sname}</td>{rows}<td>{this.props.data.linescore.home_team_runs}</td><td>{this.props.data.linescore.home_team_hits}</td><td>{this.props.data.linescore.home_team_errors}</td>
       </tr>
     )
   }
@@ -40,12 +42,12 @@ class AwayRow extends Component {
   render() {
     var rows = []
 
-    this.props.data.inning_line_score.forEach((row) => {
+    this.props.data.linescore.inning_line_score.forEach((row) => {
       rows.push(<td>{row.away}</td>)
     })
     return (
       <tr>
-        {rows}<td>{this.props.data.away_team_runs}</td><td>{this.props.data.away_team_hits}</td><td>{this.props.data.away_team_errors}</td>
+        <td>{this.props.data.away_sname}</td>{rows}<td>{this.props.data.linescore.away_team_runs}</td><td>{this.props.data.linescore.away_team_hits}</td><td>{this.props.data.linescore.away_team_errors}</td>
       </tr>
     )
   }
@@ -54,26 +56,35 @@ class BatterRow extends Component {
   render() {
     var rows = []
 
-    this.props.data.forEach((row) => {
-      rows.push(<tr><td>{row.name_display_first_last}</td><td>{row.ab}</td><td>{row.r}</td><td>{row.h}</td><td>{row.rbi}</td><td>{row.bb}</td><td>{row.so}</td><td>{row.avg}</td></tr>)
+    this.props.data.forEach((row, idx) => {
+      rows.push(<div className="tbl-row"><div className="tbl-col">{row.name_display_first_last}</div><div className="tbl-col">{row.ab}</div><div className="tbl-col">{row.r}</div><div className="tbl-col">{row.h}</div><div className="tbl-col">{row.rbi}</div><div className="tbl-col">{row.bb}</div><div className="tbl-col">{row.so}</div><div className="tbl-col">{row.avg}</div></div>)
     })
     return (
-      <tr>
-        {rows}
-      </tr>
+      <div>
+      {rows}
+      </div>
     )
   }
 }
 class BatterDetail extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      home: false,
+    }
+  }
   render() {
     return (
       <div>
-        <table>
+        <div className="tbl">
           <tbody>
-            <tr><th>Name</th><th>AB</th><th>R</th><th>RBI</th><th>BB</th><th>SO</th><th>AVG</th></tr>
-            <BatterRow data={this.props.data[0].batter} />
+            <div className="tbl-row"><th>Name</th><th>AB</th><th>R</th><th>RBI</th><th>BB</th><th>SO</th><th>AVG</th></div>
+            {this.state.home ? <BatterRow data={this.props.data.batting[0].batter} /> : <BatterRow data={this.props.data.batting[1].batter} />}
+
+
+
           </tbody>
-        </table>
+        </div>
       </div>
     )
   }
@@ -105,12 +116,14 @@ class DetailsBox extends Component {
       games: []
     }
   }
-  
+
   render() {
     console.log(this.props.details)
     return (
       <div>
         <h1>Details</h1>
+        <ScoreDetail data={this.props.details} />
+        <BatterDetail data={this.props.details} />
       </div>
     )
   }
@@ -157,7 +170,15 @@ class DetailsButton extends Component {
   clickHandler(e) {
     //DetailsBox
     e.preventDefault();
-    this.fetchBatterData(this.props.date[1], this.props.date[2], this.props.date[0], this.props.home, this.props.away)
+
+    // Reset existing.
+    this.props.handleDetailsUpdate(null)
+
+    const month = this.props.date[0];
+    const day = this.props.date[1];
+    const year = this.props.date[2];
+
+    this.fetchBatterData(month, year, day, this.props.home, this.props.away)
   }
 
   render() {
@@ -348,7 +369,7 @@ class ScoreBoard extends Component {
       <DateSelector />
         {checkGameData()}
         {scores}
-        <DetailsBox details={this.state.details}/>
+        {this.state.details ? <DetailsBox details={this.state.details}/> : null}
       </div>
     );
   }
