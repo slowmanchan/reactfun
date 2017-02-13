@@ -52,45 +52,58 @@ class AwayRow extends Component {
     )
   }
 }
+
 class BatterRow extends Component {
   render() {
-    var rows = []
+    const {
+      name_display_first_last, ab, r, h, rbi, bb, hr, so, avg
+    } = this.props.batter;
 
-    this.props.data.forEach((row, idx) => {
-      rows.push(<div className="tbl-row"><div className="tbl-col">{row.name_display_first_last}</div><div className="tbl-col">{row.ab}</div><div className="tbl-col">{row.r}</div><div className="tbl-col">{row.h}</div><div className="tbl-col">{row.rbi}</div><div className="tbl-col">{row.bb}</div><div className="tbl-col">{row.so}</div><div className="tbl-col">{row.avg}</div></div>)
-    })
     return (
-      <div>
-      {rows}
-      </div>
+      <tr>
+        <td>{name_display_first_last}</td>
+        <td>{ab}</td>
+        <td>{r}</td>
+        <td>{h}</td>
+        <td>{rbi}</td>
+        <td>{bb}</td>
+        <td>{hr}</td>
+        <td>{so}</td>
+        <td>{avg}</td>
+      </tr>
     )
   }
 }
-class BatterDetail extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      home: false,
-    }
-  }
+
+class BatterTable extends Component {
   render() {
+    var rows = [];
+    this.props.details.batting[0].batter.forEach((batter) => {
+      rows.push(<BatterRow batter={batter}/>)
+    })
+    // console.log("==" + this.props.details.batting[0].batter)
     return (
-      <div>
-        <div className="tbl">
-          <tbody>
-            <div className="tbl-row"><th>Name</th><th>AB</th><th>R</th><th>RBI</th><th>BB</th><th>SO</th><th>AVG</th></div>
-            {this.state.home ? <BatterRow data={this.props.data.batting[0].batter} /> : <BatterRow data={this.props.data.batting[1].batter} />}
-
-
-
-          </tbody>
-        </div>
-      </div>
-    )
+      <table>
+        <thead>
+          <th>Name</th>
+          <th>AB</th>
+          <th>R</th>
+          <th>H</th>
+          <th>RBI</th>
+          <th>BB</th>
+          <th>HR</th>
+          <th>SO</th>
+          <th>AVG</th>
+        </thead>
+        <tbody>
+          {rows}
+        </tbody>
+      </table>
+    );
   }
 }
 
-class ScoreDetail extends Component {
+class ScoreTable extends Component {
   render() {
     console.log("scoredetail" + this.props.data)
 
@@ -122,8 +135,8 @@ class DetailsBox extends Component {
     return (
       <div>
         <h1>Details</h1>
-        <ScoreDetail data={this.props.details} />
-        <BatterDetail data={this.props.details} />
+        <ScoreTable data={this.props.details} />
+        <BatterTable details={this.props.details} />
       </div>
     )
   }
